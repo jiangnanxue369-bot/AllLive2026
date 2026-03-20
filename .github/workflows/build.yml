@@ -24,11 +24,7 @@ jobs:
     
     - name: Build UWP
       run: |
-        # Set Windows SDK path environment variable
-        $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10"
-        $env:WindowsSDKVersion = "10.0.19041.0"
-        
-        # Build only x86 platform
+        # Use a simpler build command that only builds x86
         msbuild AllLive.UWP/AllLive.UWP.csproj `
         /p:Configuration=Release `
         /p:Platform=x86 `
@@ -36,8 +32,9 @@ jobs:
         /p:UapAppxPackageBuildMode=SideloadOnly `
         /p:TargetPlatformVersion=10.0.19041.0 `
         /p:TargetPlatformMinVersion=10.0.18362.0 `
-        /p:WindowsSdkDir="C:\Program Files (x86)\Windows Kits\10" `
-        /p:AppxBundle=Never
+        /p:AppxBundle=Never `
+        /p:BuildAllPlatforms=false `
+        /p:Platforms=x86
     
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
