@@ -25,10 +25,11 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1.1.1
     
-    - name: Install UWP workload
+    - name: Install Windows SDK 10.0.19041.0
       run: |
-        # 安装UWP开发工作负载
-        & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Workload.Universal --quiet --norestart
+        # 下载并安装Windows SDK 10.0.19041.0
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2120843" -OutFile "WindowsSDKInstaller.exe"
+        .\WindowsSDKInstaller.exe /quiet /norestart /features OptionId.UWPManaged OptionId.Windows10SDK_19041
     
     - name: Restore NuGet packages
       run: nuget restore AllLive.sln
@@ -40,10 +41,7 @@ jobs:
       run: msbuild AllLive.Console/AllLive.ConsoleApp.csproj /p:Configuration=Release /p:Platform="Any CPU"
     
     - name: Build UWP App
-      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:TargetPlatformVersion=10.0.19041.0 /p:TargetPlatformMinVersion=10.0.18362.0
-    
-    - name: Create UWP App Package
-      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload /p:TargetPlatformVersion=10.0.19041.0 /p:TargetPlatformMinVersion=10.0.18362.0
+      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:TargetPlatformVersion=10.0.19041.0 /p:TargetPlatformMinVersion=10.0.18362.0 /p:WindowsSDKVersion=10.0.19041.0 /p:UapAppxPackageBuildMode=StoreUpload
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
