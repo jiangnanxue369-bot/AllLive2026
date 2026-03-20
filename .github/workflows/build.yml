@@ -9,43 +9,39 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # 使用 windows-2022，因为它对 UWP SDK 的支持更稳定
+    runs-on: windows-2022
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-    
+    # 只需要保留基础环境设置
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.1.1
+      uses: NuGet/setup-nuget@v1.2.1
     
-    - name: Install UWP workload
-      run: |
-        # 安装Visual Studio Build Tools和UWP工作负载
-        Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
-        .\vs_buildtools.exe --quiet --norestart --wait --add Microsoft.VisualStudio.Workload.UniversalBuildTools --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools
-    
+    # 核心：还原所有依赖，确保 Core 和 UWP 项目都能找到引用
     - name: Restore NuGet packages
       run: nuget restore AllLive.sln
     
+    # 编译核心库
     - name: Build Core library
       run: msbuild AllLive.Core/AllLive.Core.csproj /p:Configuration=Release /p:Platform="Any CPU"
     
-    - name: Build Console App
-      run: msbuild AllLive.Console/AllLive.ConsoleApp.csproj /p:Configuration=Release /p:Platform="Any CPU"
-    
+    # 关键修改：编译 UWP 项目时跳过签名（否则在云端会因为找不到证书而报错）
     - name: Build UWP App
-      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:TargetPlatformVersion=10.0.19041.0 /p:TargetPlatformMinVersion=10.0.18362.0 /p:UapAppxPackageBuildMode=StoreUpload
+      run: |
+        msbuild AllLive.UWP/AllLive.UWP.csproj `
+        /p:Configuration=Release `
+        /p:Platform=x86 `
+        /p:AppxPackageSigningEnabled=false `
+        /p:UapAppxPackageBuildMode=SideloadOnly `
+        /p:TargetPlatformVersion=10.0.19041.0
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: AllLive-UWP-Package
         path: AllLive.UWP\AppPackages
-        retention-days: 30
