@@ -1,0 +1,43 @@
+name: Build UWP App
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+    
+    - name: Restore NuGet packages
+      run: nuget restore AllLive.sln
+    
+    - name: Build Core library
+      run: msbuild AllLive.Core/AllLive.Core.csproj /p:Configuration=Release /p:Platform="Any CPU"
+    
+    - name: Build Console App
+      run: msbuild AllLive.Console/AllLive.ConsoleApp.csproj /p:Configuration=Release /p:Platform="Any CPU"
+    
+    - name: Build UWP App
+      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64
+    
+    - name: Create UWP App Package
+      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:UapAppxPackageBuildMode=StoreUpload
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: AllLive-UWP-Package
+        path: AllLive.UWP\AppPackages
+        retention-days: 30
