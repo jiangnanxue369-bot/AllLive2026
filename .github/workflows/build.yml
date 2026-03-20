@@ -27,7 +27,8 @@ jobs:
         msbuild AllLive.UWP/AllLive.UWP.csproj `
         /p:Configuration=Release `
         /p:Platform=x86 `
-        /p:AppxPackageSigningEnabled=false `
+        /p:AppxPackageSigningEnabled=true `
+        /p:GenerateTemporaryStoreCertificate=true `
         /p:UapAppxPackageBuildMode=SideloadOnly `
         /p:TargetPlatformVersion=10.0.19041.0 `
         /p:TargetPlatformMinVersion=10.0.18362.0 `
