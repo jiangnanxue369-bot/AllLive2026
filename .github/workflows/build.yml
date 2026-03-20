@@ -19,12 +19,12 @@ jobs:
       uses: NuGet/setup-nuget@v1  # 自动匹配稳定版
     
     - name: Restore NuGet
-      # 必须指向正确的子文件夹路径
-      run: nuget restore AllLive/AllLive.sln
+      # 解决方案文件在根目录
+      run: nuget restore AllLive.sln
     
     - name: Build UWP
       run: |
-        msbuild AllLive/AllLive.UWP/AllLive.UWP.csproj `
+        msbuild AllLive.UWP/AllLive.UWP.csproj `
         /p:Configuration=Release `
         /p:Platform=x86 `
         /p:AppxPackageSigningEnabled=false `
@@ -35,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: AllLive-Package
-        path: AllLive/AllLive.UWP/AppPackages/
+        path: AllLive.UWP/AppPackages/
