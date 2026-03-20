@@ -1,0 +1,56 @@
+name: Sync and Build
+
+on:
+  schedule:
+    # 每3天运行一次，在凌晨1点
+    - cron: '0 1 */3 * *'
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  sync-and-build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 拉取所有历史，以便比较
+    
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+    
+    - name: Add upstream remote
+      run: |
+        git remote add upstream https://github.com/xiaoyaocz/AllLive.git || true
+        git fetch upstream
+    
+    - name: Check for updates
+      id: check-updates
+      run: |
+        # 比较本地master分支与上游master分支
+        $localHash = git rev-parse HEAD
+        $upstreamHash = git rev-parse upstream/master
+        if ($localHash -ne $upstreamHash) {
+          echo "::set-output name=has_updates::true"
+          echo "Found updates from upstream"
+        } else {
+          echo "::set-output name=has_updates::false"
+          echo "No updates from upstream"
+        }
+      shell: powershell
+    
+    - name: Sync with upstream
+      if: steps.check-updates.outputs.has_updates == 'true'
+      run: |
+        git merge upstream/master
+      shell: powershell
+    
+    - name: Push changes
+      if: steps.check-updates.outputs.has_updates == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: master
