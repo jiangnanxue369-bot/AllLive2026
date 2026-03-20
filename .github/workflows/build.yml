@@ -9,29 +9,24 @@ on:
 
 jobs:
   build:
-    # 使用 windows-2022，因为它对 UWP SDK 的支持更稳定
-    runs-on: windows-2022
+    # 改用 windows-2019，这个镜像对旧版 UWP 的兼容性最稳
+    runs-on: windows-2019
     
     steps:
     - uses: actions/checkout@v4
     
-    # 只需要保留基础环境设置
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
+    # 这里改用 v1，GitHub 会自动匹配最新的稳定大版本，不会报错
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.2.1
+      uses: NuGet/setup-nuget@v1
     
-    # 核心：还原所有依赖，确保 Core 和 UWP 项目都能找到引用
     - name: Restore NuGet packages
       run: nuget restore AllLive.sln
     
-    # 编译核心库
-    - name: Build Core library
-      run: msbuild AllLive.Core/AllLive.Core.csproj /p:Configuration=Release /p:Platform="Any CPU"
-    
-    # 关键修改：编译 UWP 项目时跳过签名（否则在云端会因为找不到证书而报错）
     - name: Build UWP App
+      # 加入了 /p:AppxPackageSigningEnabled=false 彻底避开证书问题
       run: |
         msbuild AllLive.UWP/AllLive.UWP.csproj `
         /p:Configuration=Release `
