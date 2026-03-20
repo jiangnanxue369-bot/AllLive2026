@@ -18,26 +18,21 @@ jobs:
     - name: Setup NuGet
       uses: NuGet/setup-nuget@v1
     
-    - name: Create Self-Signed Certificate
-      run: |
-        # Create a self-signed certificate for app signing
-        $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=AllLive" -CertStoreLocation "Cert:\CurrentUser\My"
-        $certThumbprint = $cert.Thumbprint
-        Write-Output "::set-output name=certThumbprint::$certThumbprint"
-      id: create-cert
-      shell: powershell
-    
     # 解决方案文件在根目录
     - name: Restore NuGet
       run: nuget restore AllLive.sln
     
     - name: Build UWP
       run: |
+        # Set Windows SDK path environment variable
+        $env:WindowsSdkDir = "C:\Program Files (x86)\Windows Kits\10"
+        $env:WindowsSDKVersion = "10.0.19041.0"
+        
+        # Build only x86 platform
         msbuild AllLive.UWP/AllLive.UWP.csproj `
         /p:Configuration=Release `
         /p:Platform=x86 `
-        /p:AppxPackageSigningEnabled=true `
-        /p:PackageCertificateThumbprint=${{ steps.create-cert.outputs.certThumbprint }} `
+        /p:AppxPackageSigningEnabled=false `
         /p:UapAppxPackageBuildMode=SideloadOnly `
         /p:TargetPlatformVersion=10.0.19041.0 `
         /p:TargetPlatformMinVersion=10.0.18362.0 `
