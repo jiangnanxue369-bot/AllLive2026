@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # 使用最新镜像抢资源
+    runs-on: windows-2019  # 锁定为windows-2019，UWP工具链最完整
     
     steps:
     - uses: actions/checkout@v4
