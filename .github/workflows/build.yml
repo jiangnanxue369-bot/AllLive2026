@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # 使用最新镜像抢资源
+    runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v4
@@ -15,24 +15,31 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
+    # 这里改用 v1，GitHub 会自动匹配最新的稳定大版本，不会报错
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1  # 自动匹配稳定版
+      uses: NuGet/setup-nuget@v1.1.1
     
-    - name: Restore NuGet
-      # 必须指向正确的子文件夹路径
-      run: nuget restore AllLive/AllLive.sln
-    
-    - name: Build UWP
+    - name: Install UWP workload
       run: |
-        msbuild AllLive/AllLive.UWP/AllLive.UWP.csproj `
-        /p:Configuration=Release `
-        /p:Platform=x86 `
-        /p:AppxPackageSigningEnabled=false `
-        /p:UapAppxPackageBuildMode=SideloadOnly `
-        /p:TargetPlatformVersion=10.0.19041.0
+        # 安装Visual Studio Build Tools和UWP工作负载
+        Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vs_buildtools.exe" -OutFile "vs_buildtools.exe"
+        .\vs_buildtools.exe --quiet --norestart --wait --add Microsoft.VisualStudio.Workload.UniversalBuildTools --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Workload.NetCoreBuildTools
+    
+    - name: Restore NuGet packages
+      run: nuget restore AllLive.sln
+    
+    - name: Build Core library
+      run: msbuild AllLive.Core/AllLive.Core.csproj /p:Configuration=Release /p:Platform="Any CPU"
+    
+    - name: Build Console App
+      run: msbuild AllLive.Console/AllLive.ConsoleApp.csproj /p:Configuration=Release /p:Platform="Any CPU"
+    
+    - name: Build UWP App
+      run: msbuild AllLive.UWP/AllLive.UWP.csproj /p:Configuration=Release /p:Platform=x64 /p:TargetPlatformVersion=10.0.19041.0 /p:TargetPlatformMinVersion=10.0.18362.0 /p:UapAppxPackageBuildMode=StoreUpload
     
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: AllLive-Package
-        path: AllLive/AllLive.UWP/AppPackages/
+        name: AllLive-UWP-Package
+        path: AllLive.UWP\AppPackages
+        retention-days: 30
